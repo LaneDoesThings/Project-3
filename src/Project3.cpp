@@ -1,6 +1,13 @@
 /*
 CS 445/545 Prog 3 for Lane Wright
 
+The ship is animated using the timer_CB function that updates its global position shipY and calls glutPostRedisplay.
+The ship is also animated using the keyboard_CB function that updates its global position shipX through the 'h' and 'j' keys and the shipY position through the 'u' key.
+
+Text is generated using bitmaps and is shown via display lists.
+
+The display_CB function handles updating the display and draws the objects as well as calling the display lists for text.
+
 */
 
 
@@ -32,54 +39,68 @@ bool planetChosen = false;
 bool grounded = false;
 bool win = false;
 
+//Draws the ship at shipX, shipY
 void ship()
 {
   glColor3ub(0, 119, 200); //UAH blue
   glPushMatrix();
   glMatrixMode(GL_MODELVIEW);
-  glTranslatef(shipX, shipY, zPlane);
-  glScalef(shipLength, shipLength, shipLength);
+  glTranslatef(shipX, shipY, zPlane); //Move the ship
+  glScalef(shipLength, shipLength, shipLength); //Scale the ship
   glutWireOctahedron();
   glPopMatrix();
 
 }
 
+//Draws the landing pad at the bottom left of the screen
 void landingPad()
 {
-  glColor3f(0.1f, 0.8f, 0.1f);
+  glColor3f(0.1f, 0.8f, 0.1f); //Green
   glBegin(GL_LINES);
+
+  //Vertical Line
   glVertex3i(1, groundLevel, zPlane);
   glVertex3i(1, groundLevel + landingHeight, zPlane);
+  
+  //Diagonal lines
   glVertex3i(1, groundLevel + landingHeight, zPlane);
   glVertex3i(landingWidth / 2, groundLevel, zPlane);
+  
   glVertex3i(landingWidth / 2, groundLevel, zPlane);
   glVertex3i(landingWidth + 1, groundLevel + landingHeight, zPlane);
+
+  //Vertical Line
   glVertex3i(landingWidth + 1, groundLevel + landingHeight, zPlane);
   glVertex3i(landingWidth + 1, groundLevel, zPlane);
   glEnd();
 }
 
+//Draws the ground line
 void ground()
 {
-  glColor3f(1.0f, 0.0f, 0.0f);
+  glColor3f(1.0f, 0.0f, 0.0f); //Red
   glBegin(GL_LINES);
   glVertex3i(0, groundLevel, zPlane);
   glVertex3i(canvas_Width, groundLevel, zPlane);
   glEnd();
 }
 
+//Displays the fuel remaining in the top right
 void fuelDisplay()
 {
-  glColor3f(0.0f,0.0f,0.0f);
+  glColor3f(0.0f,0.0f,0.0f); //Black
   glRasterPos2i(canvas_Width - 75, canvas_Height - 20);
+
+  //Wacky casting to get the fuel as a const char * for glut
   std::string fuelString = "Fuel: " + std::to_string(fuel);
   const unsigned char* fuelCharArray = (const unsigned char *)fuelString.c_str();
   glutBitmapString(GLUT_BITMAP_8_BY_13, fuelCharArray);
 }
 
+//Callback function for display event
 void display_CB()
 {
-  glClearColor(1.0f, 1.0f, 1.0f, 1.0);
+  glClearColor(1.0f, 1.0f, 1.0f, 1.0); //White
   glClear(GL_COLOR_BUFFER_BIT);
 
 
@@ -88,21 +109,27 @@ void display_CB()
   landingPad();
   fuelDisplay();
 
+  //If you haven't pressed 'v' or 'i' show the start message
   if(!planetChosen)
   {
     glCallList(1);
   }
+
+  //If you have won show the win message
   if(win)
   {
     glCallList(2);
   }
+
   glFlush();
 }
 
+//Callback for timer event
 void timer_CB(int id)
 {
-  if(id == 0)
+  if(id == 0) //Framerate timer
   {
+    //The ship is within the bounding box of the landing pad
     if((shipY - shipLength) < landingHeight && shipX < landingWidth)
     {
       grounded = true;
@@ -111,12 +138,13 @@ void timer_CB(int id)
       shipY = groundLevel + shipLength;
       
     }
+    //The ship isn't on the ground
     else if(shipY - shipLength > groundLevel)
     {
       if (thrust)
       {
         shipY += 5;
-        upForce += 5;
+        upForce += 5; //Used to update the position in the gravity calculations
         thrust = false;
       }
       else if (planetChosen)
@@ -137,8 +165,11 @@ void timer_CB(int id)
   }
 }
 
+//Callback for keyboard event
 void keyboard_CB(unsigned char key, int x, int y)
 {
+
+  //Pick a planet/moon and set the gravity accordingly
   if(!planetChosen)
   {
     if (key == 'v')
@@ -152,6 +183,8 @@ void keyboard_CB(unsigned char key, int x, int y)
       planetChosen = true;
     }
   }
+
+  //Change ship position
   if(!grounded)
   {
     if(key == 'u')
@@ -175,7 +208,7 @@ int main(int argc, char *argv[]) {
   glutInit(&argc, argv);
   my_setup(canvas_Width, canvas_Height, canvas_Name);
 
-  glGenLists(3);
+  glGenLists(2); //Allocate the display lists
 
   //Start List
   glNewList(1, GL_COMPILE);
