@@ -187,7 +187,7 @@ void keyboard_CB(unsigned char key, int x, int y)
   //Change ship position
   if(!grounded)
   {
-    if(key == 'u')
+    if(key == 'u' && fuel > 0)
     {
       fuel -=5;
       thrust = true;
